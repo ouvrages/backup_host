@@ -50,6 +50,7 @@ config = YAML.load(File.read(config_file))
 
 remote = config["remote"]
 id_file = config["key"]
+id_files = ([id_file] + config.fetch("keys",  [])).compact
 paths = config["paths"]
 root = config["root"] || root
 options = config["options"]
@@ -98,7 +99,7 @@ paths.each do |path_name, path|
     "--partial",
     "--bwlimit=#{bwlimit}",
     # "--rsync-path='nice rsync'",
-    "--rsh", "ssh -i #{id_file}",
+    "--rsh", "ssh #{id_files.map { |id_file| "-i #{id_file}" }.join(" ")}",
   ]
   cmd << "--verbose" if verbose
   cmd << "--dry-run" if dry_run
