@@ -14,6 +14,7 @@ config = YAML.load(File.read(config_file))
 
 remote = config["remote"]
 id_file = config["key"]
+id_files = ([id_file] + config.fetch("keys",  [])).compact
 root = config["backup_root"]
 paths = config["paths"]
 
@@ -42,7 +43,7 @@ paths.each do |path_name, path|
     "--one-file-system",
     "--delete",
     "--compress",
-    "--rsh", "ssh -i #{id_file}",
+    "--rsh", "ssh #{id_files.map { |id_file| "-i #{id_file}" }.join(" ")}",
   ]
   if File.exists?(last_backup)
     cmd += ["--link-dest", last_backup]
