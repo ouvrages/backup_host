@@ -2,6 +2,7 @@
 
 require 'fileutils'
 require 'yaml'
+require 'shellwords'
 
 include FileUtils
 
@@ -58,6 +59,7 @@ timeout_hours = config["timeout_hours"] || 6
 timeout = timeout_hours * 3600
 bwlimit = config["bwlimit"] || 100
 remove_last = config["remove_last"] || false
+ssh_options = config["ssh_options"] || {}
 
 raise "No root defined" unless root
 
@@ -87,6 +89,15 @@ paths.each do |path_name, path|
   mkpath dest
   backup_dir = File.join(dest, name)
 
+  ssh_args = []
+  id_files.each do |id_file|
+    ssh_args += ["-i", id_file]
+  end
+  ssh_options.each do |name, value|
+    ssh_args += ["-o", "#{name}=#{Shellwords.escape(value)}"]
+  end
+  ssh_args = ssh_args.join(" ")
+
   cmd = [
     "/usr/bin/ionice", "-c", "3",
     "/usr/bin/nice",
@@ -99,7 +110,7 @@ paths.each do |path_name, path|
     "--partial",
     "--bwlimit=#{bwlimit}",
     # "--rsync-path='nice rsync'",
-    "--rsh", "ssh #{id_files.map { |id_file| "-i #{id_file}" }.join(" ")}",
+    "--rsh", "ssh #{ssh_args}",
   ]
   cmd << "--verbose" if verbose
   cmd << "--dry-run" if dry_run
